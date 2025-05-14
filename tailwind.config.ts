@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Custom theme colors
+				"app-dark": "#1A1F2C",
+				"app-blue": "#33C3F0",
+				"app-teal": "#06B6D4",
+				"app-gray": "#8E9196",
+				"app-light": "#F1F0FB",
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
