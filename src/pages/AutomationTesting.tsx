@@ -9,8 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Code, Play, FileType, FileCode } from "lucide-react";
+import { Code, Play, FileCode, Download } from "lucide-react";
 import { FileInput } from "@/components/FileInput";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AutomationTesting = () => {
   const [testFile, setTestFile] = useState<File | null>(null);
@@ -34,6 +35,10 @@ test('basic test', async ({ page }) => {
   
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [testResults, setTestResults] = useState<string | null>(null);
+  const [testStatus, setTestStatus] = useState<'idle' | 'running' | 'success' | 'failure'>('idle');
+  const [testFiles, setTestFiles] = useState<{name: string, content: string}[]>([]);
+  const [activeTestFile, setActiveTestFile] = useState<string | null>(null);
+  
   const { toast } = useToast();
 
   const handleFileChange = (file: File | null) => {
@@ -48,7 +53,21 @@ test('basic test', async ({ page }) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        setTestScript(event.target.result as string);
+        const content = event.target.result as string;
+        setTestScript(content);
+        
+        // Add to test files if not already there
+        if (!testFiles.some(tf => tf.name === file.name)) {
+          setTestFiles([...testFiles, { name: file.name, content }]);
+        } else {
+          // Update existing file
+          setTestFiles(testFiles.map(tf => 
+            tf.name === file.name ? { ...tf, content } : tf
+          ));
+        }
+        
+        setActiveTestFile(file.name);
+        
         toast({
           title: "Test File Loaded",
           description: `Successfully loaded ${file.name}`,
@@ -56,6 +75,25 @@ test('basic test', async ({ page }) => {
       }
     };
     reader.readAsText(file);
+  };
+
+  const switchTestFile = (fileName: string) => {
+    const file = testFiles.find(tf => tf.name === fileName);
+    if (file) {
+      setTestScript(file.content);
+      setActiveTestFile(fileName);
+    }
+  };
+
+  const handleScriptChange = (newContent: string) => {
+    setTestScript(newContent);
+    
+    // If we have an active test file, update its content
+    if (activeTestFile) {
+      setTestFiles(testFiles.map(tf => 
+        tf.name === activeTestFile ? { ...tf, content: newContent } : tf
+      ));
+    }
   };
 
   const handleRunTests = () => {
@@ -70,27 +108,148 @@ test('basic test', async ({ page }) => {
 
     setIsRunning(true);
     setTestResults(null);
+    setTestStatus('running');
+
+    // Generate description based on test configuration
+    const configDescription = [
+      `Browser: ${browser}`,
+      `Headless: ${headless ? 'Yes' : 'No'}`,
+      `Screenshots: ${captureScreenshots ? 'Enabled' : 'Disabled'}`,
+      `Video: ${captureVideo ? 'Enabled' : 'Disabled'}`,
+    ].join(' | ');
+
+    toast({
+      title: "Starting Tests",
+      description: configDescription,
+    });
 
     // Mock test execution with a delay
     setTimeout(() => {
-      // Generate mock test results
-      const mockResults = `
+      // Simulate test running messages for a more realistic experience
+      setTestResults(`Initializing browser: ${browser}...\nLaunching in ${headless ? 'headless' : 'headed'} mode...`);
+      
+      setTimeout(() => {
+        setTestResults(prev => prev + "\nRunning tests...");
+        
+        setTimeout(() => {
+          // Decide if tests pass or fail (80% chance of success)
+          const success = Math.random() > 0.2;
+          
+          // Generate mock test results
+          let mockResults;
+          if (success) {
+            mockResults = `
+Running tests with ${browser} ${headless ? '(headless)' : '(headed)'}
+${captureScreenshots ? '✓ Screenshots enabled' : ''}
+${captureVideo ? '✓ Video recording enabled' : ''}
+
 Running 3 tests using 1 worker
   ✓ basic test (2.3s)
   ✓ navigation test (1.8s)
   ✓ authentication test (3.1s)
 
 3 passed (7.2s)
-      `;
+            `;
+            setTestStatus('success');
+          } else {
+            mockResults = `
+Running tests with ${browser} ${headless ? '(headless)' : '(headed)'}
+${captureScreenshots ? '✓ Screenshots enabled' : ''}
+${captureVideo ? '✓ Video recording enabled' : ''}
+
+Running 3 tests using 1 worker
+  ✓ basic test (2.3s)
+  ✓ navigation test (1.8s)
+  ✗ authentication test (3.1s)
+    Error: Timed out waiting for selector '.login-form'
+
+2 passed, 1 failed (7.2s)
+            `;
+            setTestStatus('failure');
+          }
+          
+          setTestResults(mockResults);
+          setIsRunning(false);
+          
+          toast({
+            title: success ? "Tests completed" : "Tests finished with errors",
+            description: success ? "All tests passed successfully" : "Some tests failed - check the results",
+            variant: success ? "default" : "destructive",
+          });
+        }, 1000);
+      }, 800);
+    }, 500);
+  };
+
+  const exportTestFile = () => {
+    if (!testScript) {
+      toast({
+        title: "No test script",
+        description: "There is no test script to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const blob = new Blob([testScript], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = activeTestFile || "test.spec.js";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Test File Exported",
+      description: `Saved as ${activeTestFile || "test.spec.js"}`,
+    });
+  };
+
+  const runAllTestFiles = () => {
+    if (testFiles.length === 0) {
+      toast({
+        title: "No test files",
+        description: "Please upload test files first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRunning(true);
+    setTestResults(null);
+    setTestStatus('running');
+
+    toast({
+      title: "Running All Tests",
+      description: `Executing ${testFiles.length} test files...`,
+    });
+
+    // Mock execution of multiple test files
+    setTimeout(() => {
+      let results = `Running ${testFiles.length} test files with ${browser} ${headless ? '(headless)' : '(headed)'}\n`;
       
-      setTestResults(mockResults);
+      testFiles.forEach((file, i) => {
+        const success = Math.random() > 0.2; // 80% chance of success
+        results += `\nFile: ${file.name}\n`;
+        results += success 
+          ? "  ✓ All tests passed\n" 
+          : "  ✗ Some tests failed\n";
+      });
+      
+      results += `\nTest suite completed. ${Math.floor(testFiles.length * 0.8)} of ${testFiles.length} files passed all tests.`;
+      
+      setTestResults(results);
       setIsRunning(false);
+      setTestStatus(Math.random() > 0.2 ? 'success' : 'failure');
       
       toast({
-        title: "Tests completed",
-        description: "All tests passed successfully",
+        title: "Test Suite Completed",
+        description: `Finished running ${testFiles.length} test files`,
       });
-    }, 3000);
+    }, 2000);
   };
 
   return (
@@ -154,28 +313,91 @@ Running 3 tests using 1 worker
               </div>
 
               <div className="border border-dashed rounded-md p-4">
-                <Label className="text-sm font-medium mb-2 block">Import Test File</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium mb-2 block">Import Test File</Label>
+                  {testFiles.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={runAllTestFiles}
+                      disabled={isRunning}
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Run All
+                    </Button>
+                  )}
+                </div>
+                
                 <FileInput
                   accept=".js,.ts"
                   onChange={handleFileChange}
                   label="Select Test File"
                   icon={<FileCode className="h-4 w-4 mr-2" />}
                 />
-                {testFile && (
-                  <p className="text-sm mt-2">
-                    Selected: <span className="font-medium">{testFile.name}</span>
-                  </p>
+                
+                {testFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <Label className="text-sm font-medium">Test Files</Label>
+                    <div className="max-h-40 overflow-y-auto border rounded-md divide-y">
+                      {testFiles.map((file, index) => (
+                        <div 
+                          key={index} 
+                          className={`p-2 text-sm cursor-pointer hover:bg-muted ${activeTestFile === file.name ? 'bg-muted' : ''}`}
+                          onClick={() => switchTestFile(file.name)}
+                        >
+                          <div className="flex items-center">
+                            <FileCode className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">{file.name}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 
-              <Button 
-                className="w-full" 
-                disabled={isRunning}
-                onClick={handleRunTests}
-              >
-                <Play className="mr-2 h-4 w-4" />
-                {isRunning ? "Running Tests..." : "Run Tests"}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  className="flex-1" 
+                  disabled={isRunning}
+                  onClick={handleRunTests}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  {isRunning ? "Running Tests..." : "Run Tests"}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={exportTestFile}
+                  disabled={!testScript.trim()}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {testStatus === 'running' && (
+                <Alert>
+                  <AlertDescription className="text-sm">
+                    Tests are currently running...
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {testStatus === 'success' && (
+                <Alert className="bg-green-50 text-green-800 border-green-200">
+                  <AlertDescription className="text-sm">
+                    All tests passed successfully
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {testStatus === 'failure' && (
+                <Alert className="bg-red-50 text-red-800 border-red-200">
+                  <AlertDescription className="text-sm">
+                    Some tests failed - check results for details
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -192,12 +414,14 @@ Running 3 tests using 1 worker
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center">
                       <Code className="mr-2 h-4 w-4" />
-                      <span className="text-sm font-medium">Playwright Test Script</span>
+                      <span className="text-sm font-medium">
+                        {activeTestFile ? activeTestFile : "Playwright Test Script"}
+                      </span>
                     </div>
                   </div>
                   <Textarea 
                     value={testScript}
-                    onChange={(e) => setTestScript(e.target.value)}
+                    onChange={(e) => handleScriptChange(e.target.value)}
                     className="min-h-[500px] font-mono text-sm"
                   />
                 </CardContent>

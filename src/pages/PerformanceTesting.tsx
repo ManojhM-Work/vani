@@ -10,18 +10,22 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileInput } from "@/components/FileInput";
-import { FileJson } from "lucide-react";
+import { FileJson, Play, Download } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Mock data for charts
-const generateMockData = () => {
+const generateMockData = (duration = 20, baseResponseTime = 100, baseThroughput = 50) => {
   const data = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < duration; i++) {
+    // Add some randomness to make the chart more realistic
+    const variation = Math.sin(i / 3) * 30;
+    const userVariation = Math.floor(Math.random() * 10);
+    
     data.push({
       time: `${i}s`,
-      responseTime: Math.floor(Math.random() * 100) + 100,
-      throughput: Math.floor(Math.random() * 50) + 50,
-      users: 50,
+      responseTime: Math.max(10, Math.floor(baseResponseTime + variation + Math.random() * 50)),
+      throughput: Math.max(5, Math.floor(baseThroughput + variation / 2 + Math.random() * 20)),
+      users: 50 + userVariation,
     });
   }
   return data;
@@ -38,6 +42,9 @@ const PerformanceTesting = () => {
   const [selectedMetric, setSelectedMetric] = useState<string>("responseTime");
   const [jmxFile, setJmxFile] = useState<File | null>(null);
   const [jmxLoaded, setJmxLoaded] = useState<boolean>(false);
+  const [jmxContent, setJmxContent] = useState<string | null>(null);
+  const [multipleJmxFiles, setMultipleJmxFiles] = useState<{name: string, content: string}[]>([]);
+  const [activeJmxFile, setActiveJmxFile] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -50,20 +57,103 @@ const PerformanceTesting = () => {
     
     setJmxFile(file);
     
-    // For JMX files, we would typically parse them, but for this demo we'll just simulate success
-    setTimeout(() => {
-      // Mock JMX import success
-      setTargetUrl("https://api.example.com/test");
-      setThreadCount(25);
-      setRampUp(10);
-      setDuration(120);
-      setJmxLoaded(true);
+    // Read JMX file content
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        // Store the JMX content (would be XML in real app)
+        const content = e.target?.result as string;
+        setJmxContent(content);
+        
+        // Add to collection of JMX files
+        if (!multipleJmxFiles.some(jmx => jmx.name === file.name)) {
+          setMultipleJmxFiles([...multipleJmxFiles, { name: file.name, content }]);
+        } else {
+          // Update existing file
+          setMultipleJmxFiles(multipleJmxFiles.map(jmx => 
+            jmx.name === file.name ? { ...jmx, content } : jmx
+          ));
+        }
+        
+        setActiveJmxFile(file.name);
+        
+        // For JMX files, we would typically parse them, but for this demo we'll just simulate success
+        setTimeout(() => {
+          // Mock JMX import success - set values based on "loaded" JMX file
+          setTargetUrl("https://api.example.com/test");
+          setThreadCount(25);
+          setRampUp(10);
+          setDuration(120);
+          setJmxLoaded(true);
+          
+          toast({
+            title: "JMX File Loaded",
+            description: `Successfully imported ${file.name}`,
+          });
+        }, 500);
+      } catch (error) {
+        toast({
+          title: "Error Loading JMX",
+          description: "Failed to parse the JMX file",
+          variant: "destructive",
+        });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const selectJmxFile = (fileName: string) => {
+    const file = multipleJmxFiles.find(jmx => jmx.name === fileName);
+    if (file) {
+      setJmxContent(file.content);
+      setActiveJmxFile(fileName);
+      
+      // Simulate loading parameters from the JMX file
+      const randomThreads = Math.floor(Math.random() * 50) + 10;
+      const randomRampUp = Math.floor(Math.random() * 15) + 5;
+      const randomDuration = Math.floor(Math.random() * 180) + 30;
+      
+      // Update the UI with "parsed" values from the JMX
+      setTargetUrl(`https://api.example.com/${fileName.toLowerCase().replace('.jmx', '')}`);
+      setThreadCount(randomThreads);
+      setRampUp(randomRampUp);
+      setDuration(randomDuration);
       
       toast({
-        title: "JMX File Loaded",
-        description: `Successfully imported ${file.name}`,
+        title: "JMX Configuration Loaded",
+        description: `Loaded test configuration from ${fileName}`,
       });
-    }, 500);
+    }
+  };
+  
+  const exportJmxFile = () => {
+    if (!jmxContent) {
+      toast({
+        title: "No JMX Content",
+        description: "There is no JMX file to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create a modified version that includes current parameters
+    const updatedJmx = jmxContent; // In a real app, we'd update XML with current parameters
+    
+    const blob = new Blob([updatedJmx], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = activeJmxFile || "performance_test.jmx";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "JMX File Exported",
+      description: `Saved with current configuration as ${activeJmxFile || "performance_test.jmx"}`,
+    });
   };
 
   const handleRunTest = () => {
@@ -80,6 +170,11 @@ const PerformanceTesting = () => {
     setProgress(0);
     setTestResults(null);
 
+    toast({
+      title: "Starting Performance Test",
+      description: `Threads: ${threadCount} | Duration: ${duration}s | URL: ${targetUrl}`,
+    });
+
     // Mock test execution with progress updates
     const interval = setInterval(() => {
       setProgress((prevProgress) => {
@@ -90,16 +185,16 @@ const PerformanceTesting = () => {
           setIsRunning(false);
           
           // Generate mock results after test is complete
-          const mockData = generateMockData();
+          const mockData = generateMockData(20, threadCount * 8, threadCount * 3);
           setTestResults({
             summary: {
-              totalRequests: 5000,
-              successfulRequests: 4850,
-              failedRequests: 150,
-              averageResponseTime: 234,
-              minResponseTime: 89,
-              maxResponseTime: 1200,
-              throughput: 83.33,
+              totalRequests: threadCount * duration / 2,
+              successfulRequests: Math.floor(threadCount * duration / 2 * 0.97),
+              failedRequests: Math.ceil(threadCount * duration / 2 * 0.03),
+              averageResponseTime: 150 + (threadCount * 3),
+              minResponseTime: 50 + (threadCount),
+              maxResponseTime: 500 + (threadCount * 15),
+              throughput: (threadCount * 1.5).toFixed(2),
               errorRate: 3.0,
             },
             chartData: mockData,
@@ -117,6 +212,56 @@ const PerformanceTesting = () => {
     }, 1000);
   };
 
+  const runAllJmxFiles = () => {
+    if (multipleJmxFiles.length === 0) {
+      toast({
+        title: "No JMX Files",
+        description: "Please import JMX files first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Batch Execution",
+      description: `Running ${multipleJmxFiles.length} performance test scenarios sequentially`,
+    });
+    
+    setIsRunning(true);
+    setProgress(0);
+    
+    // Simulate running all JMX files one after another
+    let currentFile = 0;
+    const totalFiles = multipleJmxFiles.length;
+    
+    const runNextFile = () => {
+      if (currentFile >= totalFiles) {
+        // All files have been run
+        setIsRunning(false);
+        toast({
+          title: "Batch Execution Complete",
+          description: `Completed all ${totalFiles} test scenarios`,
+        });
+        return;
+      }
+      
+      const file = multipleJmxFiles[currentFile];
+      toast({
+        title: `Running Test ${currentFile + 1} of ${totalFiles}`,
+        description: `Executing: ${file.name}`,
+      });
+      
+      // Mock execution time for each file
+      setTimeout(() => {
+        currentFile++;
+        setProgress((currentFile / totalFiles) * 100);
+        runNextFile();
+      }, 3000);
+    };
+    
+    runNextFile();
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -129,12 +274,35 @@ const PerformanceTesting = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Test Configuration</CardTitle>
+              {jmxContent && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={exportJmxFile}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export JMX
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="border border-dashed rounded-md p-4">
-                <Label className="text-sm font-medium mb-2 block">Import JMX File</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-sm font-medium">Import JMX File</Label>
+                  {multipleJmxFiles.length > 1 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={runAllJmxFiles}
+                      disabled={isRunning}
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Run All
+                    </Button>
+                  )}
+                </div>
                 <FileInput
                   accept=".jmx"
                   onChange={handleFileChange}
@@ -153,6 +321,26 @@ const PerformanceTesting = () => {
                         </AlertDescription>
                       </Alert>
                     )}
+                  </div>
+                )}
+                
+                {multipleJmxFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <Label className="text-xs">Available Test Scenarios</Label>
+                    <div className="max-h-32 overflow-y-auto border rounded-md divide-y">
+                      {multipleJmxFiles.map((file, index) => (
+                        <div 
+                          key={index}
+                          className={`p-2 text-sm cursor-pointer hover:bg-muted ${activeJmxFile === file.name ? 'bg-muted' : ''}`}
+                          onClick={() => selectJmxFile(file.name)}
+                        >
+                          <div className="flex items-center">
+                            <FileJson className="h-3 w-3 mr-2 flex-shrink-0" />
+                            <span className="truncate">{file.name}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -251,6 +439,11 @@ const PerformanceTesting = () => {
           <Card className="h-full">
             <CardHeader>
               <CardTitle>Test Results</CardTitle>
+              {activeJmxFile && jmxLoaded && (
+                <p className="text-sm text-muted-foreground">
+                  Active scenario: {activeJmxFile}
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               {testResults ? (
@@ -260,6 +453,7 @@ const PerformanceTesting = () => {
                     <TabsTrigger value="charts">Charts</TabsTrigger>
                     <TabsTrigger value="errors">Errors</TabsTrigger>
                   </TabsList>
+                  
                   <TabsContent value="summary" className="space-y-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                       <Card>
@@ -422,10 +616,20 @@ const PerformanceTesting = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full p-12 text-center">
                   <p className="text-muted-foreground mb-4">
-                    No test results available. Configure and run a test to see results here.
+                    {isRunning 
+                      ? "Test in progress... Results will appear here when complete."
+                      : "No test results available. Configure and run a test to see results here."}
                   </p>
-                  {!isRunning && (
+                  {!isRunning && !jmxLoaded && (
+                    <Alert>
+                      <AlertDescription>
+                        Import a JMX file to load test configurations or configure test parameters manually.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  {!isRunning && jmxLoaded && (
                     <Button variant="outline" onClick={handleRunTest}>
+                      <Play className="h-4 w-4 mr-2" />
                       Start Test
                     </Button>
                   )}
