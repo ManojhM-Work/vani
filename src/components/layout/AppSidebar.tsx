@@ -20,9 +20,12 @@ interface AppSidebarProps {
 }
 
 const AppSidebar = ({ isOpen }: AppSidebarProps) => {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+
+  // Check if sidebar is collapsed
+  const isCollapsed = state === "collapsed";
 
   /* Navigation items for the sidebar */
   const navigationItems = [
@@ -48,24 +51,23 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
 
   return (
     <Sidebar 
-      className={collapsed ? "w-14 transition-all duration-300" : "w-64 transition-all duration-300"} 
-      collapsible
+      className={isCollapsed ? "w-14 transition-all duration-300" : "w-64 transition-all duration-300"} 
+      collapsible="icon"
     >
       <SidebarTrigger className="m-2 self-end" />
 
       <SidebarContent>
         <div className="my-4 px-4">
-          {!collapsed && (
+          {!isCollapsed && (
             <h2 className="text-xl font-bold text-primary">API TestHub</h2>
           )}
         </div>
 
         <SidebarGroup 
-          open={isExpanded}
-          defaultOpen={true}
+          defaultOpen={isExpanded}
         >
           <SidebarGroupLabel className="px-4 py-2">
-            {!collapsed && "Navigation"}
+            {!isCollapsed && "Navigation"}
           </SidebarGroupLabel>
 
           <SidebarGroupContent>
@@ -75,7 +77,7 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end={item.url === "/"} className={getNavClass}>
                       <item.icon className="h-5 w-5" />
-                      {!collapsed && (
+                      {!isCollapsed && (
                         <span className="ml-3">{item.title}</span>
                       )}
                     </NavLink>

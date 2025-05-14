@@ -9,7 +9,7 @@ const AppLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <SidebarProvider collapsedWidth={56}>
+    <SidebarProvider defaultOpen={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
       <div className="min-h-screen flex flex-col w-full">
         <AppHeader 
           isSidebarOpen={isSidebarOpen}
