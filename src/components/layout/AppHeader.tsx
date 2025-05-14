@@ -21,7 +21,7 @@ const AppHeader = ({ isSidebarOpen, toggleSidebar }: AppHeaderProps) => {
       </Button>
       
       <div className="flex-1 flex items-center">
-        <h1 className="text-xl font-bold text-primary md:text-2xl">API TestHub</h1>
+        <h1 className="text-xl font-bold text-primary md:text-2xl">VANI</h1>
       </div>
       
       <div className="flex items-center space-x-4">
