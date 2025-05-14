@@ -8,6 +8,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarGroupAction,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -63,9 +64,8 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
           )}
         </div>
 
-        <SidebarGroup 
-          defaultOpen={isExpanded}
-        >
+        {/* Remove the defaultOpen prop that's causing the error */}
+        <SidebarGroup>
           <SidebarGroupLabel className="px-4 py-2">
             {!isCollapsed && "Navigation"}
           </SidebarGroupLabel>
