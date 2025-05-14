@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileType2, FlaskConical, Gauge, History } from "lucide-react";
+import { FileType2, FlaskConical, Gauge, History, Code } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
@@ -54,7 +54,7 @@ const Dashboard = () => {
           <Card className="hover:bg-card/80 transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg font-medium">Automation Testing</CardTitle>
-              <FileType2 className="h-5 w-5 text-primary" />
+              <Code className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">

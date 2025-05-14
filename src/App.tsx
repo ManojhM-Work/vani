@@ -11,6 +11,7 @@ import { ThemeProvider } from "./hooks/useTheme";
 import Dashboard from "./pages/Dashboard";
 import Conversion from "./pages/Conversion";
 import FunctionalTesting from "./pages/FunctionalTesting";
+import AutomationTesting from "./pages/AutomationTesting";
 import PerformanceTesting from "./pages/PerformanceTesting";
 import NotFound from "./pages/NotFound";
 
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/" element={<Dashboard />} />
               <Route path="/conversion" element={<Conversion />} />
               <Route path="/functional" element={<FunctionalTesting />} />
+              <Route path="/automation" element={<AutomationTesting />} />
               <Route path="/performance" element={<PerformanceTesting />} />
             </Route>
             <Route path="*" element={<NotFound />} />

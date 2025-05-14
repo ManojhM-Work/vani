@@ -33,6 +33,7 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
     { title: "Dashboard", url: "/", icon: Code },
     { title: "Conversion", url: "/conversion", icon: FileType2 },
     { title: "Functional Tests", url: "/functional", icon: FlaskConical },
+    { title: "Automation", url: "/automation", icon: Code },
     { title: "Performance", url: "/performance", icon: Gauge },
   ];
 
@@ -64,7 +65,6 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
           )}
         </div>
 
-        {/* Remove the defaultOpen prop that's causing the error */}
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 py-2">
             {!isCollapsed && "Navigation"}
