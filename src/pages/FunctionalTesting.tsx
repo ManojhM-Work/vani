@@ -14,6 +14,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { FileInput } from "@/components/FileInput";
+import { FileJson, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const httpMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
 
@@ -27,8 +30,62 @@ const FunctionalTesting = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [statusCode, setStatusCode] = useState<number | null>(null);
   const [responseTime, setResponseTime] = useState<number | null>(null);
+  const [collectionFile, setCollectionFile] = useState<File | null>(null);
+  const [collectionData, setCollectionData] = useState<any>(null);
+  const [showCollectionImport, setShowCollectionImport] = useState<boolean>(false);
   
   const { toast } = useToast();
+
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      setCollectionFile(null);
+      return;
+    }
+    
+    setCollectionFile(file);
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const jsonData = JSON.parse(e.target?.result as string);
+        setCollectionData(jsonData);
+        toast({
+          title: "Collection Imported",
+          description: `Successfully imported ${file.name}`,
+        });
+      } catch (error) {
+        toast({
+          title: "Invalid JSON",
+          description: "The file doesn't contain valid JSON data",
+          variant: "destructive",
+        });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const loadRequestFromCollection = (request: any) => {
+    // Example of loading from collection - adjust based on your collection format
+    if (!request) return;
+    
+    try {
+      setUrl(request.url || "");
+      setMethod(request.method || "GET");
+      setRequestBody(request.body ? JSON.stringify(request.body, null, 2) : "");
+      setRequestHeaders(request.headers ? JSON.stringify(request.headers, null, 2) : "");
+      
+      toast({
+        title: "Request Loaded",
+        description: `Loaded ${request.name || 'request'} from collection`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error Loading Request",
+        description: "Failed to load request data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSendRequest = async () => {
     if (!url) {
@@ -143,10 +200,54 @@ const FunctionalTesting = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Request Builder</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowCollectionImport(!showCollectionImport)}
+              >
+                <FileJson className="h-4 w-4 mr-2" />
+                Import Collection
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
+              {showCollectionImport && (
+                <div className="p-4 border rounded-md mb-4 bg-muted/50">
+                  <h3 className="text-sm font-medium mb-2">Import Collection</h3>
+                  <FileInput 
+                    accept=".json"
+                    onChange={handleFileChange}
+                    label="Select Collection File"
+                  />
+                  {collectionFile && (
+                    <div className="mt-2">
+                      <p className="text-sm">Imported: {collectionFile.name}</p>
+                      {collectionData && collectionData.items && collectionData.items.length > 0 && (
+                        <div className="mt-2">
+                          <Label className="text-xs mb-1 block">Available Requests</Label>
+                          <Select onValueChange={(value) => {
+                            const request = collectionData.items.find((item: any) => item.id === value);
+                            if (request) loadRequestFromCollection(request);
+                          }}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select a request" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {collectionData.items.map((item: any) => (
+                                <SelectItem key={item.id || item.name} value={item.id || item.name}>
+                                  {item.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center space-x-2">
                 <Select value={method} onValueChange={setMethod}>
                   <SelectTrigger className="w-[30%]">

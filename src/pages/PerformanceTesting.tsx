@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { FileInput } from "@/components/FileInput";
+import { FileJson } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Mock data for charts
 const generateMockData = () => {
@@ -34,14 +36,41 @@ const PerformanceTesting = () => {
   const [progress, setProgress] = useState<number>(0);
   const [testResults, setTestResults] = useState<any>(null);
   const [selectedMetric, setSelectedMetric] = useState<string>("responseTime");
+  const [jmxFile, setJmxFile] = useState<File | null>(null);
+  const [jmxLoaded, setJmxLoaded] = useState<boolean>(false);
   
   const { toast } = useToast();
 
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      setJmxFile(null);
+      setJmxLoaded(false);
+      return;
+    }
+    
+    setJmxFile(file);
+    
+    // For JMX files, we would typically parse them, but for this demo we'll just simulate success
+    setTimeout(() => {
+      // Mock JMX import success
+      setTargetUrl("https://api.example.com/test");
+      setThreadCount(25);
+      setRampUp(10);
+      setDuration(120);
+      setJmxLoaded(true);
+      
+      toast({
+        title: "JMX File Loaded",
+        description: `Successfully imported ${file.name}`,
+      });
+    }, 500);
+  };
+
   const handleRunTest = () => {
-    if (!targetUrl) {
+    if (!targetUrl && !jmxLoaded) {
       toast({
         title: "URL Required",
-        description: "Please enter a target URL for testing",
+        description: "Please enter a target URL or import a JMX file for testing",
         variant: "destructive",
       });
       return;
@@ -104,6 +133,30 @@ const PerformanceTesting = () => {
               <CardTitle>Test Configuration</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="border border-dashed rounded-md p-4">
+                <Label className="text-sm font-medium mb-2 block">Import JMX File</Label>
+                <FileInput
+                  accept=".jmx"
+                  onChange={handleFileChange}
+                  label="Select JMX File"
+                  icon={<FileJson className="h-4 w-4 mr-2" />}
+                />
+                {jmxFile && (
+                  <div className="mt-2">
+                    <p className="text-sm">
+                      Imported: <span className="font-medium">{jmxFile.name}</span>
+                    </p>
+                    {jmxLoaded && (
+                      <Alert className="mt-2 bg-muted">
+                        <AlertDescription className="text-xs">
+                          JMX file loaded successfully. Configuration parameters have been updated.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="target-url">Target URL</Label>
                 <Input

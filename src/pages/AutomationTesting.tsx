@@ -9,7 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Code, Play, FileType } from "lucide-react";
+import { Code, Play, FileType, FileCode } from "lucide-react";
+import { FileInput } from "@/components/FileInput";
 
 const AutomationTesting = () => {
   const [testFile, setTestFile] = useState<File | null>(null);
@@ -35,13 +36,12 @@ test('basic test', async ({ page }) => {
   const [testResults, setTestResults] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) {
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
       setTestFile(null);
       return;
     }
 
-    const file = e.target.files[0];
     setTestFile(file);
 
     // Read file content and update editor
@@ -49,6 +49,10 @@ test('basic test', async ({ page }) => {
     reader.onload = (event) => {
       if (event.target?.result) {
         setTestScript(event.target.result as string);
+        toast({
+          title: "Test File Loaded",
+          description: `Successfully loaded ${file.name}`,
+        });
       }
     };
     reader.readAsText(file);
@@ -149,24 +153,14 @@ Running 3 tests using 1 worker
                 </div>
               </div>
 
-              <div className="border-2 border-dashed rounded-md p-4 flex flex-col items-center justify-center">
-                <FileType className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground mb-2">
-                  Upload test script or create one below
-                </p>
-                <input
-                  type="file"
-                  id="file-upload"
+              <div className="border border-dashed rounded-md p-4">
+                <Label className="text-sm font-medium mb-2 block">Import Test File</Label>
+                <FileInput
                   accept=".js,.ts"
-                  className="hidden"
                   onChange={handleFileChange}
+                  label="Select Test File"
+                  icon={<FileCode className="h-4 w-4 mr-2" />}
                 />
-                <Button
-                  variant="outline"
-                  onClick={() => document.getElementById("file-upload")?.click()}
-                >
-                  Select File
-                </Button>
                 {testFile && (
                   <p className="text-sm mt-2">
                     Selected: <span className="font-medium">{testFile.name}</span>
