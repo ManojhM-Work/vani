@@ -1,11 +1,11 @@
-
 import { useState } from "react";
 import { 
   Card, 
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { 
   Select,
@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Download, Upload } from "lucide-react";
+import { ArrowRight, Download, Upload, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const apiFormats = [
@@ -30,12 +30,20 @@ const apiFormats = [
   { id: "restassured", name: "REST Assured" },
 ];
 
+interface ConversionReport {
+  successful: number;
+  total: number;
+  errors: Array<{endpoint: string; message: string}>;
+  timeStamp: string;
+}
+
 const Conversion = () => {
   const [sourceFormat, setSourceFormat] = useState<string>("");
   const [targetFormat, setTargetFormat] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [previewText, setPreviewText] = useState<string>("");
   const [convertedText, setConvertedText] = useState<string>("");
+  const [report, setReport] = useState<ConversionReport | null>(null);
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,9 +89,56 @@ const Conversion = () => {
     // Mock conversion - in reality would call an API
     setConvertedText(`Converted from ${sourceFormat} to ${targetFormat}:\n\n// This is a mock conversion\n{\n  "converted": true,\n  "sourceFormat": "${sourceFormat}",\n  "targetFormat": "${targetFormat}",\n  "timestamp": "${new Date().toISOString()}"\n}`);
     
+    // Create a mock report
+    const mockReport: ConversionReport = {
+      successful: Math.floor(Math.random() * 5) + 5, // Random number between 5-10
+      total: Math.floor(Math.random() * 5) + 7, // Random number between 7-12
+      errors: [],
+      timeStamp: new Date().toISOString()
+    };
+    
+    // Generate some mock errors if successful is less than total
+    if (mockReport.successful < mockReport.total) {
+      const errorCount = mockReport.total - mockReport.successful;
+      for (let i = 0; i < errorCount; i++) {
+        mockReport.errors.push({
+          endpoint: `/api/mock/endpoint${i+1}`,
+          message: `Invalid schema at path $.paths[${i}].parameters`
+        });
+      }
+    }
+    
+    setReport(mockReport);
+    
     toast({
       title: "Conversion Complete",
-      description: `Successfully converted from ${sourceFormat} to ${targetFormat}`,
+      description: `Successfully converted ${mockReport.successful} of ${mockReport.total} endpoints`,
+    });
+  };
+
+  const downloadReport = () => {
+    if (!report) return;
+    
+    const reportData = {
+      source: sourceFormat,
+      target: targetFormat,
+      fileName: file?.name || "unknown",
+      ...report
+    };
+    
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `conversion-report-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Report Downloaded",
+      description: "Conversion report has been downloaded successfully",
     });
   };
 
@@ -176,9 +231,10 @@ const Conversion = () => {
             <Button onClick={handleConvert}>Convert</Button>
 
             <Tabs defaultValue="preview">
-              <TabsList className="grid grid-cols-2">
+              <TabsList className="grid grid-cols-3">
                 <TabsTrigger value="preview">Source Preview</TabsTrigger>
                 <TabsTrigger value="converted">Converted Result</TabsTrigger>
+                <TabsTrigger value="report">Conversion Report</TabsTrigger>
               </TabsList>
               <TabsContent value="preview">
                 <Card>
@@ -200,6 +256,62 @@ const Conversion = () => {
                         <Download className="h-4 w-4 mr-2" />
                         Download Result
                       </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="report">
+                <Card>
+                  <CardContent className="pt-4">
+                    {report ? (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Conversion Summary</h3>
+                          <Button variant="outline" onClick={downloadReport}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Report
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <Card>
+                            <CardContent className="pt-6 text-center">
+                              <p className="text-4xl font-bold">{report.successful}</p>
+                              <p className="text-sm text-muted-foreground">Successful</p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="pt-6 text-center">
+                              <p className="text-4xl font-bold">{report.errors.length}</p>
+                              <p className="text-sm text-muted-foreground">Failed</p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="pt-6 text-center">
+                              <p className="text-4xl font-bold">{report.total}</p>
+                              <p className="text-sm text-muted-foreground">Total</p>
+                            </CardContent>
+                          </Card>
+                        </div>
+                        
+                        {report.errors.length > 0 && (
+                          <div>
+                            <h4 className="text-md font-medium mb-2">Errors</h4>
+                            <div className="border rounded-md max-h-64 overflow-y-auto">
+                              {report.errors.map((error, idx) => (
+                                <div key={idx} className="border-b p-3 last:border-b-0">
+                                  <p className="font-medium">{error.endpoint}</p>
+                                  <p className="text-sm text-red-500">{error.message}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-64">
+                        <FileText className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="text-muted-foreground">No report generated yet. Convert an API to see the report.</p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>

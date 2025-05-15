@@ -8,7 +8,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarGroupAction,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -61,7 +60,7 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
       <SidebarContent>
         <div className="my-4 px-4">
           {!isCollapsed && (
-            <h2 className="text-xl font-bold text-primary">API TestHub</h2>
+            <h2 className="text-xl font-bold text-primary">VANI</h2>
           )}
         </div>
 
