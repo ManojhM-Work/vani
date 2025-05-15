@@ -124,11 +124,9 @@ export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiR
                 : editedRequest.headers || ''}
               onChange={e => {
                 try {
-                  // Try to parse as JSON if possible
                   const headers = JSON.parse(e.target.value);
                   updateField('headers', headers);
                 } catch {
-                  // Otherwise just store as string
                   updateField('headers', e.target.value);
                 }
               }}
@@ -144,11 +142,9 @@ export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiR
                 : editedRequest.body || ''}
               onChange={e => {
                 try {
-                  // Try to parse as JSON if possible
                   const body = JSON.parse(e.target.value);
                   updateField('body', body);
                 } catch {
-                  // Otherwise just store as string
                   updateField('body', e.target.value);
                 }
               }}
