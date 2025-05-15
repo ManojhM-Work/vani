@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface ApiRequestCardProps {
   request: any;
@@ -23,7 +23,19 @@ export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiR
   };
   
   const handleSendRequest = () => {
+    if (!editedRequest.url) {
+      toast({
+        title: "URL Required",
+        description: "Please provide a URL for the request",
+        variant: "destructive",
+      });
+      return;
+    }
     onSendRequest(editedRequest);
+    toast({
+      title: "Request Sent",
+      description: `${editedRequest.method} request to ${editedRequest.url} has been sent.`
+    });
   };
   
   return (
