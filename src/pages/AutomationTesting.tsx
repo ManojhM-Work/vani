@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Play, FileCode, Plus, Clock, BarChart2 } from "lucide-react";
 import { ApiSidebar } from '../components/testing/ApiSidebar';
 import { AutomationScriptList } from '../components/testing/AutomationScriptList';
-import { TestReport } from '../components/testing/TestReport';
+import { TestReport, TestResult } from '../components/testing/TestReport';
 
 const AutomationTesting = () => {
   // Mock data for API requests
@@ -46,18 +46,29 @@ const AutomationTesting = () => {
   
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   
-  // Mock test results
-  const testResults = {
+  // Mock test results - Fixed to match TestResult type
+  const testResults: {
+    results: TestResult[];
+    summary: {
+      total: number;
+      passed: number;
+      failed: number;
+      skipped: number;
+      duration: number;
+    };
+    type: "functional" | "performance" | "automation";
+  } = {
     results: [
-      { id: "1", name: "Test Case 1", status: "passed", duration: "2.3s" },
-      { id: "2", name: "Test Case 2", status: "failed", duration: "1.5s", error: "Expected 200 but got 404" },
-      { id: "3", name: "Test Case 3", status: "passed", duration: "0.8s" }
+      { id: "1", name: "Test Case 1", status: "passed", time: 2300 },
+      { id: "2", name: "Test Case 2", status: "failed", time: 1500, error: "Expected 200 but got 404" },
+      { id: "3", name: "Test Case 3", status: "passed", time: 800 }
     ],
     summary: {
       total: 3,
       passed: 2,
       failed: 1,
-      duration: "4.6s"
+      skipped: 0,
+      duration: 4.6
     },
     type: "functional"
   };
