@@ -59,9 +59,9 @@ const AutomationTesting = () => {
     type: "functional" | "performance" | "automation";
   } = {
     results: [
-      { id: "1", name: "Test Case 1", status: "passed", time: 2300 },
-      { id: "2", name: "Test Case 2", status: "failed", time: 1500, error: "Expected 200 but got 404" },
-      { id: "3", name: "Test Case 3", status: "passed", time: 800 }
+      { name: "Test Case 1", status: "passed", time: 2300 },
+      { name: "Test Case 2", status: "failed", time: 1500, error: "Expected 200 but got 404" },
+      { name: "Test Case 3", status: "passed", time: 800 }
     ],
     summary: {
       total: 3,
