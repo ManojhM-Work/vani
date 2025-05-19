@@ -130,7 +130,7 @@ export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiR
                   updateField('headers', e.target.value);
                 }
               }}
-              placeholder="{\n  \"Content-Type\": \"application/json\"\n}"
+              placeholder='{\n  "Content-Type": "application/json"\n}'
               className="min-h-[200px] font-mono"
             />
           </TabsContent>
@@ -148,7 +148,7 @@ export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiR
                   updateField('body', e.target.value);
                 }
               }}
-              placeholder="{\n  \"key\": \"value\"\n}"
+              placeholder='{\n  "key": "value"\n}'
               className="min-h-[200px] font-mono"
             />
           </TabsContent>
@@ -157,7 +157,7 @@ export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiR
             <Textarea
               value={editedRequest.tests || ''}
               onChange={e => updateField('tests', e.target.value)}
-              placeholder="pm.test(\"Status code is 200\", function() {\n  pm.response.to.have.status(200);\n});"
+              placeholder='pm.test("Status code is 200", function() {\n  pm.response.to.have.status(200);\n});'
               className="min-h-[200px] font-mono"
             />
           </TabsContent>
