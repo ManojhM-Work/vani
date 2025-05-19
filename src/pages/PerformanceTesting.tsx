@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,16 +13,70 @@ import { ApiSidebar } from '../components/testing/ApiSidebar';
 import { PerformanceGraphs } from '../components/testing/PerformanceGraphs';
 
 const PerformanceTesting = () => {
+  // Mock API requests for ApiSidebar
+  const [apiRequests, setApiRequests] = useState([
+    { 
+      id: "1", 
+      name: "Get User Profile", 
+      url: "https://api.example.com/users/1", 
+      method: "GET",
+      folder: "User API"
+    },
+    { 
+      id: "2", 
+      name: "Create User", 
+      url: "https://api.example.com/users", 
+      method: "POST",
+      folder: "User API"
+    },
+    { 
+      id: "3", 
+      name: "Update Product", 
+      url: "https://api.example.com/products/1", 
+      method: "PUT",
+      folder: "Product API"
+    }
+  ]);
+  
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  
+  // Mock performance data
+  const performanceData = {
+    responseTimeSeries: Array.from({ length: 10 }, (_, i) => ({
+      name: `Request ${i+1}`,
+      time: Math.floor(Math.random() * 100) + 50
+    })),
+    throughputData: Array.from({ length: 10 }, (_, i) => ({
+      name: `Minute ${i+1}`,
+      tps: Math.floor(Math.random() * 50) + 10
+    })),
+    errorRates: Array.from({ length: 10 }, (_, i) => ({
+      name: `Minute ${i+1}`,
+      rate: Math.random() * 5
+    })),
+    responseCodes: [
+      { code: "200", count: 856 },
+      { code: "201", count: 142 },
+      { code: "400", count: 23 },
+      { code: "404", count: 12 },
+      { code: "500", count: 7 }
+    ]
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold">Performance Testing</h2>
       
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/5">
-          <ApiSidebar />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="col-span-1">
+          <ApiSidebar 
+            requests={apiRequests} 
+            onSelectRequest={setSelectedRequest}
+            selectedRequestId={selectedRequest?.id}
+          />
         </div>
         
-        <div className="w-full md:w-2/5">
+        <div className="col-span-1">
           <Card>
             <CardHeader>
               <CardTitle>Test Configuration</CardTitle>
@@ -127,8 +181,8 @@ const PerformanceTesting = () => {
           </Card>
         </div>
         
-        <div className="w-full md:w-2/5">
-          <PerformanceGraphs />
+        <div className="col-span-1">
+          <PerformanceGraphs data={performanceData} />
         </div>
       </div>
     </div>

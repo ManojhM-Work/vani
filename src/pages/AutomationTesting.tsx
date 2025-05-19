@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -9,16 +9,82 @@ import { AutomationScriptList } from '../components/testing/AutomationScriptList
 import { TestReport } from '../components/testing/TestReport';
 
 const AutomationTesting = () => {
+  // Mock data for API requests
+  const [apiRequests, setApiRequests] = useState([
+    { 
+      id: "1", 
+      name: "Get User Profile", 
+      url: "https://api.example.com/users/1", 
+      method: "GET",
+      folder: "User API"
+    },
+    { 
+      id: "2", 
+      name: "Create User", 
+      url: "https://api.example.com/users", 
+      method: "POST",
+      folder: "User API"
+    },
+    { 
+      id: "3", 
+      name: "Update Product", 
+      url: "https://api.example.com/products/1", 
+      method: "PUT",
+      folder: "Product API"
+    }
+  ]);
+  
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  
+  // Mock data for scripts
+  const [scripts, setScripts] = useState([
+    { id: "1", name: "User Registration Flow", content: "// Test script content", type: "functional" },
+    { id: "2", name: "Product Checkout", content: "// Test script content", type: "functional" },
+    { id: "3", name: "API Health Check", content: "// Test script content", type: "health" },
+    { id: "4", name: "Load Test", content: "// Test script content", type: "performance" }
+  ]);
+  
+  const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+  
+  // Mock test results
+  const testResults = {
+    results: [
+      { id: "1", name: "Test Case 1", status: "passed", duration: "2.3s" },
+      { id: "2", name: "Test Case 2", status: "failed", duration: "1.5s", error: "Expected 200 but got 404" },
+      { id: "3", name: "Test Case 3", status: "passed", duration: "0.8s" }
+    ],
+    summary: {
+      total: 3,
+      passed: 2,
+      failed: 1,
+      duration: "4.6s"
+    },
+    type: "functional"
+  };
+  
+  const handleSelectScript = (script: any) => {
+    setSelectedScriptId(script.id);
+  };
+  
+  const handleRunScript = (script: any) => {
+    console.log("Running script:", script);
+    // In a real app, this would trigger the script execution
+  };
+  
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold">Automation Testing</h2>
       
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/5">
-          <ApiSidebar />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="col-span-1">
+          <ApiSidebar 
+            requests={apiRequests} 
+            onSelectRequest={setSelectedRequest} 
+            selectedRequestId={selectedRequest?.id} 
+          />
         </div>
         
-        <div className="w-full md:w-2/5">
+        <div className="col-span-1">
           <Tabs defaultValue="scripts">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="scripts">Test Scripts</TabsTrigger>
@@ -32,7 +98,12 @@ const AutomationTesting = () => {
                   New Script
                 </Button>
               </div>
-              <AutomationScriptList />
+              <AutomationScriptList 
+                scripts={scripts} 
+                onSelectScript={handleSelectScript} 
+                onRunScript={handleRunScript} 
+                selectedScriptId={selectedScriptId} 
+              />
             </TabsContent>
             <TabsContent value="schedule">
               <Card>
@@ -111,8 +182,12 @@ const AutomationTesting = () => {
           </Card>
         </div>
         
-        <div className="w-full md:w-2/5">
-          <TestReport />
+        <div className="col-span-1">
+          <TestReport 
+            results={testResults.results}
+            summary={testResults.summary}
+            type={testResults.type}
+          />
         </div>
       </div>
     </div>

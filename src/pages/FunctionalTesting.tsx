@@ -18,6 +18,33 @@ const FunctionalTesting = () => {
   const [response, setResponse] = useState<ApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Mock API requests for ApiSidebar
+  const [apiRequests, setApiRequests] = useState([
+    { 
+      id: "1", 
+      name: "Get User Profile", 
+      url: "https://api.example.com/users/1", 
+      method: "GET",
+      folder: "User API"
+    },
+    { 
+      id: "2", 
+      name: "Create User", 
+      url: "https://api.example.com/users", 
+      method: "POST",
+      folder: "User API"
+    },
+    { 
+      id: "3", 
+      name: "Update Product", 
+      url: "https://api.example.com/products/1", 
+      method: "PUT",
+      folder: "Product API"
+    }
+  ]);
+  
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   const handleApiRequest = async (requestData: ApiRequestData) => {
     setIsLoading(true);
@@ -146,16 +173,20 @@ const FunctionalTesting = () => {
     <div className="space-y-6">
       <h2 className="text-3xl font-bold">Functional Testing</h2>
 
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/5">
-          <ApiSidebar />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="col-span-1">
+          <ApiSidebar 
+            requests={apiRequests} 
+            onSelectRequest={setSelectedRequest} 
+            selectedRequestId={selectedRequest?.id} 
+          />
         </div>
         
-        <div className="w-full md:w-2/5">
+        <div className="col-span-1">
           <ApiRequestBuilder onSubmit={handleApiRequest} />
         </div>
         
-        <div className="w-full md:w-2/5">
+        <div className="col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
