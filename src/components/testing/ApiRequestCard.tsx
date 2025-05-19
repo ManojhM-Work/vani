@@ -1,11 +1,12 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface ApiRequestCardProps {
   request: any;
@@ -15,6 +16,7 @@ interface ApiRequestCardProps {
 
 export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiRequestCardProps) => {
   const [editedRequest, setEditedRequest] = useState(request);
+  const { toast } = useToast();
   
   const updateField = (field: string, value: any) => {
     const updated = { ...editedRequest, [field]: value };
@@ -130,7 +132,7 @@ export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiR
                   updateField('headers', e.target.value);
                 }
               }}
-              placeholder='{\n  "Content-Type": "application/json"\n}'
+              placeholder='{"Content-Type": "application/json"}'
               className="min-h-[200px] font-mono"
             />
           </TabsContent>
@@ -148,7 +150,7 @@ export const ApiRequestCard = ({ request, onSendRequest, onUpdateRequest }: ApiR
                   updateField('body', e.target.value);
                 }
               }}
-              placeholder='{\n  "key": "value"\n}'
+              placeholder='{"key": "value"}'
               className="min-h-[200px] font-mono"
             />
           </TabsContent>

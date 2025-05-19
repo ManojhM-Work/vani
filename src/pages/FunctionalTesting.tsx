@@ -14,12 +14,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { FileInput } from "@/components/FileInput";
-import { FileJson, AlertCircle, Play, Download, List } from "lucide-react";
+import { FileJson, AlertCircle, Play, Download, List, Plus, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ApiRequestCard } from "@/components/testing/ApiRequestCard";
 import { TestReport, TestResult } from "@/components/testing/TestReport";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 
 const httpMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
+
+interface QueryParam {
+  key: string;
+  value: string;
+  description: string;
+}
 
 const FunctionalTesting = () => {
   const [url, setUrl] = useState<string>("");
@@ -39,8 +53,25 @@ const FunctionalTesting = () => {
   const [showTestReport, setShowTestReport] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [activeRequest, setActiveRequest] = useState<any>(null);
+  const [queryParams, setQueryParams] = useState<QueryParam[]>([]);
   
   const { toast } = useToast();
+
+  const addQueryParam = () => {
+    setQueryParams([...queryParams, { key: "", value: "", description: "" }]);
+  };
+
+  const removeQueryParam = (index: number) => {
+    const newParams = [...queryParams];
+    newParams.splice(index, 1);
+    setQueryParams(newParams);
+  };
+
+  const updateQueryParam = (index: number, field: keyof QueryParam, value: string) => {
+    const newParams = [...queryParams];
+    newParams[index] = { ...newParams[index], [field]: value };
+    setQueryParams(newParams);
+  };
 
   const handleFileChange = (file: File | null) => {
     if (!file) {
@@ -493,8 +524,8 @@ const FunctionalTesting = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 space-y-6">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="md:w-1/3 space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Request Builder</CardTitle>
@@ -606,11 +637,85 @@ const FunctionalTesting = () => {
                     />
                   </div>
 
-                  <Tabs defaultValue="body">
-                    <TabsList className="grid grid-cols-2">
+                  <Tabs defaultValue="queryParams">
+                    <TabsList className="grid grid-cols-3">
+                      <TabsTrigger value="queryParams">Query Params</TabsTrigger>
                       <TabsTrigger value="body">Body</TabsTrigger>
                       <TabsTrigger value="headers">Headers</TabsTrigger>
                     </TabsList>
+                    
+                    <TabsContent value="queryParams" className="space-y-4">
+                      <div className="border rounded-md p-4">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-sm font-medium">Query Parameters</h3>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={addQueryParam}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Add Parameter
+                          </Button>
+                        </div>
+                        
+                        {queryParams.length > 0 ? (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-[30%]">Key</TableHead>
+                                <TableHead className="w-[30%]">Value</TableHead>
+                                <TableHead className="w-[30%]">Description</TableHead>
+                                <TableHead className="w-[10%]"></TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {queryParams.map((param, index) => (
+                                <TableRow key={index}>
+                                  <TableCell>
+                                    <Input 
+                                      value={param.key} 
+                                      placeholder="parameter_name"
+                                      onChange={(e) => updateQueryParam(index, 'key', e.target.value)}
+                                      size={20}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input 
+                                      value={param.value} 
+                                      placeholder="value"
+                                      onChange={(e) => updateQueryParam(index, 'value', e.target.value)}
+                                      size={20}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input 
+                                      value={param.description} 
+                                      placeholder="Parameter description"
+                                      onChange={(e) => updateQueryParam(index, 'description', e.target.value)}
+                                      size={30}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => removeQueryParam(index)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        ) : (
+                          <div className="text-center py-6 text-sm text-muted-foreground">
+                            No query parameters added yet.
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
                     <TabsContent value="body" className="space-y-4">
                       <Textarea
                         placeholder={`{\n  "key": "value"\n}`}
@@ -642,7 +747,7 @@ const FunctionalTesting = () => {
           </Card>
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:w-2/3">
           {showTestReport ? (
             <TestReport 
               results={testResults} 

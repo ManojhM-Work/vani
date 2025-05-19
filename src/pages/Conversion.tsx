@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Card, 
@@ -25,7 +24,8 @@ import {
   FileText, 
   Check, 
   XCircle, 
-  AlertTriangle 
+  AlertTriangle,
+  FileOutput
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -203,7 +203,7 @@ test('POST /users', async ({ request }) => {
     }
   });
   expect(response.status()).toBe(201);
-});`;
+}`;
 
       case "cypress":
         return `
@@ -228,7 +228,7 @@ describe('API Tests', () => {
       expect(response.status).to.eq(201)
     })
   })
-})`;
+}`;
 
       default:
         return `// Converted from ${sourceFormat} to ${targetFormat}\n\n/* This is an accurate conversion based on the source format */\n\n${JSON.stringify(parsedContent, null, 2)}`;
@@ -443,6 +443,306 @@ const Conversion = () => {
     });
   };
 
+  // New function to download HTML report
+  const downloadHTMLReport = () => {
+    if (!report) return;
+    
+    const sourceFormatName = apiFormats.find(f => f.id === sourceFormat)?.name || sourceFormat;
+    const targetFormatName = apiFormats.find(f => f.id === targetFormat)?.name || targetFormat;
+    
+    // Generate HTML content
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>API Conversion Report</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9fafb;
+          }
+          .report-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+          }
+          h1 {
+            color: #111827;
+            margin-top: 0;
+          }
+          .meta-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            color: #6b7280;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 15px;
+          }
+          .meta-item {
+            display: flex;
+            align-items: center;
+          }
+          .meta-label {
+            font-weight: 600;
+            margin-right: 5px;
+          }
+          .summary-boxes {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+          }
+          .summary-box {
+            flex: 1;
+            min-width: 180px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+          }
+          .total {
+            background-color: #f3f4f6;
+          }
+          .success {
+            background-color: #ecfdf5;
+          }
+          .failed {
+            background-color: #fef2f2;
+          }
+          .box-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 10px 0;
+          }
+          .box-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+          }
+          .progress-container {
+            margin-bottom: 30px;
+          }
+          .progress-bar {
+            height: 12px;
+            background-color: #f3f4f6;
+            border-radius: 6px;
+            overflow: hidden;
+          }
+          .progress-fill {
+            height: 100%;
+            background-color: #10b981;
+            transition: width 0.5s ease;
+          }
+          .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #6b7280;
+          }
+          .endpoints-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          .endpoints-table th {
+            text-align: left;
+            padding: 12px 15px;
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+          }
+          .endpoints-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .endpoints-table tr:hover {
+            background-color: #f9fafb;
+          }
+          .method-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+          }
+          .get { background-color: #3b82f6; }
+          .post { background-color: #10b981; }
+          .put { background-color: #f59e0b; }
+          .delete { background-color: #ef4444; }
+          .patch { background-color: #8b5cf6; }
+          .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+          }
+          .status-success {
+            background-color: #ecfdf5;
+            color: #047857;
+          }
+          .status-failed {
+            background-color: #fef2f2;
+            color: #b91c1c;
+          }
+          .error-message {
+            font-family: monospace;
+            background-color: #fef2f2;
+            padding: 8px;
+            border-radius: 4px;
+            color: #b91c1c;
+            font-size: 12px;
+            margin-top: 6px;
+            white-space: pre-wrap;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 0.9rem;
+          }
+          .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+          }
+          .dot-success { background-color: #10b981; }
+          .dot-failed { background-color: #ef4444; }
+          @media (max-width: 768px) {
+            .summary-boxes {
+              flex-direction: column;
+            }
+            .summary-box {
+              min-width: auto;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="report-container">
+          <h1>API Conversion Report</h1>
+          
+          <div class="meta-info">
+            <div class="meta-item">
+              <span class="meta-label">Source Format:</span>
+              <span>${sourceFormatName}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Target Format:</span>
+              <span>${targetFormatName}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Date:</span>
+              <span>${new Date(report.timeStamp).toLocaleString()}</span>
+            </div>
+          </div>
+          
+          <div class="summary-boxes">
+            <div class="summary-box total">
+              <div class="box-value">${report.total}</div>
+              <div class="box-label">Total Endpoints</div>
+            </div>
+            <div class="summary-box success">
+              <div class="box-value">${report.successful}</div>
+              <div class="box-label">Successful</div>
+            </div>
+            <div class="summary-box failed">
+              <div class="box-value">${report.total - report.successful}</div>
+              <div class="box-label">Failed</div>
+            </div>
+          </div>
+          
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${(report.successful / report.total) * 100}%"></div>
+            </div>
+            <div class="progress-labels">
+              <div>Success Rate</div>
+              <div>${Math.round((report.successful / report.total) * 100)}%</div>
+            </div>
+          </div>
+          
+          <h2>Endpoint Details</h2>
+          <table class="endpoints-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Name</th>
+                <th>Method</th>
+                <th>Path</th>
+                <th>Error Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${report.endpoints.map(endpoint => `
+                <tr>
+                  <td>
+                    <span class="status-badge ${endpoint.status === 'success' ? 'status-success' : 'status-failed'}">
+                      <span class="dot ${endpoint.status === 'success' ? 'dot-success' : 'dot-failed'}"></span>
+                      ${endpoint.status === 'success' ? 'Success' : 'Failed'}
+                    </span>
+                  </td>
+                  <td>${endpoint.name}</td>
+                  <td>
+                    <span class="method-badge ${endpoint.method.toLowerCase()}">
+                      ${endpoint.method}
+                    </span>
+                  </td>
+                  <td>${endpoint.path}</td>
+                  <td>
+                    ${endpoint.errorMessage 
+                      ? `<div class="error-message">${endpoint.errorMessage}</div>` 
+                      : '-'}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="footer">
+          <p>Generated by API Testing Platform • ${new Date().toISOString().split('T')[0]}</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Create a blob and download
+    const blob = new Blob([htmlContent], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `api-conversion-report-${new Date().toISOString().slice(0, 10)}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "HTML Report Downloaded",
+      description: "Conversion report has been downloaded as HTML",
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -649,6 +949,13 @@ const Conversion = () => {
                             <p>Conversion performed on: {new Date(report.timeStamp).toLocaleString()}</p>
                             <p>From: {apiFormats.find(f => f.id === sourceFormat)?.name || sourceFormat}</p>
                             <p>To: {apiFormats.find(f => f.id === targetFormat)?.name || targetFormat}</p>
+                          </div>
+                          
+                          <div className="mt-6 flex justify-end">
+                            <Button variant="outline" onClick={downloadHTMLReport}>
+                              <FileOutput className="h-4 w-4 mr-2" />
+                              Download HTML Report
+                            </Button>
                           </div>
                         </div>
                       </div>
