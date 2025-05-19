@@ -24,9 +24,8 @@ import {
   FileText, 
   Check, 
   XCircle, 
-  AlertTriangle, 
-  FileOutput, 
-  Sparkles
+  AlertTriangle,
+  FileOutput
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -38,10 +37,6 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
-import AiAnalysisResults from "../components/conversion/AiAnalysisResults";
-import { AIApiService } from "../services/aiApiService";
-import { generateHtmlDocumentation } from "../components/conversion/HtmlDocGenerator";
 
 const apiFormats = [
   { id: "postman", name: "Postman Collection" },
@@ -369,12 +364,7 @@ const Conversion = () => {
   const [previewText, setPreviewText] = useState<string>("");
   const [convertedText, setConvertedText] = useState<string>("");
   const [report, setReport] = useState<ConversionReport | null>(null);
-  const [useAiEnhancement, setUseAiEnhancement] = useState<boolean>(true);
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [aiAnalysisResults, setAiAnalysisResults] = useState<any>(null);
   const { toast } = useToast();
-
-  const aiService = new AIApiService();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
@@ -396,7 +386,7 @@ const Conversion = () => {
     reader.readAsText(selectedFile);
   };
 
-  const handleConvert = async () => {
+  const handleConvert = () => {
     if (!sourceFormat || !targetFormat) {
       toast({
         title: "Missing formats",
@@ -413,35 +403,6 @@ const Conversion = () => {
         variant: "destructive"
       });
       return;
-    }
-
-    // Show loading toast for AI analysis if enabled
-    if (useAiEnhancement) {
-      setIsAnalyzing(true);
-      toast({
-        title: "AI Analysis in Progress",
-        description: "Analyzing your API for semantic understanding and improvements...",
-      });
-      
-      try {
-        // Perform AI analysis
-        const analysisResult = await aiService.analyzeApiSpecification(previewText);
-        setAiAnalysisResults(analysisResult);
-        
-        toast({
-          title: "AI Analysis Complete",
-          description: "API has been analyzed for semantic understanding and improvements"
-        });
-      } catch (error) {
-        console.error("AI analysis error:", error);
-        toast({
-          title: "AI Analysis Error",
-          description: "Failed to analyze API. Using standard conversion.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsAnalyzing(false);
-      }
     }
 
     // Generate realistic converted output
@@ -481,8 +442,8 @@ const Conversion = () => {
       description: `Converted ${targetFormat} file has been downloaded successfully`,
     });
   };
-  
-  // Function to download HTML report
+
+  // New function to download HTML report
   const downloadHTMLReport = () => {
     if (!report) return;
     
@@ -782,44 +743,6 @@ const Conversion = () => {
     });
   };
 
-  // New function to download AI-generated documentation
-  const downloadAIDocumentation = () => {
-    if (!aiAnalysisResults || !aiAnalysisResults.generatedDocumentation) {
-      toast({
-        title: "Documentation Not Available",
-        description: "Please run the AI analysis first",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const sourceFormatName = apiFormats.find(f => f.id === sourceFormat)?.name || sourceFormat;
-    const targetFormatName = apiFormats.find(f => f.id === targetFormat)?.name || targetFormat;
-    
-    // Generate HTML documentation using the helper
-    const htmlContent = generateHtmlDocumentation(
-      aiAnalysisResults.generatedDocumentation,
-      sourceFormatName,
-      targetFormatName
-    );
-    
-    // Create a blob and download
-    const blob = new Blob([htmlContent], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `api-documentation-${new Date().toISOString().slice(0, 10)}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Documentation Downloaded",
-      description: "AI-generated API documentation has been downloaded as HTML",
-    });
-  };
-
   return (
     <div className="space-y-8">
       <div>
@@ -905,39 +828,14 @@ const Conversion = () => {
                 </p>
               )}
             </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="ai-enhancement"
-                checked={useAiEnhancement}
-                onCheckedChange={setUseAiEnhancement}
-              />
-              <div>
-                <Label 
-                  htmlFor="ai-enhancement" 
-                  className="flex items-center gap-1.5"
-                >
-                  <Sparkles className="h-4 w-4 text-purple-500" />
-                  <span>AI-Enhanced Conversion</span>
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Use AI for semantic understanding, validation, and auto-documentation
-                </p>
-              </div>
-            </div>
             
-            <Button onClick={handleConvert} disabled={isAnalyzing}>
-              {isAnalyzing ? "Analyzing..." : "Convert"}
-            </Button>
+            <Button onClick={handleConvert}>Convert</Button>
 
             <Tabs defaultValue="preview">
-              <TabsList className="grid grid-cols-4">
+              <TabsList className="grid grid-cols-3">
                 <TabsTrigger value="preview">Source Preview</TabsTrigger>
                 <TabsTrigger value="converted">Converted Result</TabsTrigger>
                 <TabsTrigger value="report">Conversion Report</TabsTrigger>
-                <TabsTrigger value="ai-analysis" disabled={!aiAnalysisResults}>
-                  AI Analysis
-                </TabsTrigger>
               </TabsList>
               <TabsContent value="preview">
                 <Card>
@@ -1065,26 +963,6 @@ const Conversion = () => {
                       <div className="flex flex-col items-center justify-center h-64">
                         <FileText className="h-10 w-10 text-muted-foreground mb-2" />
                         <p className="text-muted-foreground">No report generated yet. Convert an API to see the report.</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="ai-analysis">
-                <Card>
-                  <CardContent className="pt-4">
-                    {aiAnalysisResults ? (
-                      <AiAnalysisResults 
-                        semanticStructure={aiAnalysisResults.semanticStructure}
-                        validationIssues={aiAnalysisResults.validationIssues}
-                        suggestedImprovements={aiAnalysisResults.suggestedImprovements}
-                        generatedDocumentation={aiAnalysisResults.generatedDocumentation}
-                        onDownloadDocumentation={downloadAIDocumentation}
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-64">
-                        <Sparkles className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">No AI analysis performed yet. Enable AI-Enhanced Conversion and convert an API to see the analysis.</p>
                       </div>
                     )}
                   </CardContent>
