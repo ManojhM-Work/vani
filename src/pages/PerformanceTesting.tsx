@@ -10,8 +10,9 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileInput } from "@/components/FileInput";
-import { FileJson, Play, Download } from "lucide-react";
+import { FileJson, Play, Download, Globe } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { downloadHtmlReport, HtmlReportData } from "@/utils/htmlReportGenerator";
 
 // Mock data for charts
 const generateMockData = (duration = 20, baseResponseTime = 100, baseThroughput = 50) => {
@@ -262,6 +263,82 @@ const PerformanceTesting = () => {
     runNextFile();
   };
 
+  const handleDownloadHtmlReport = () => {
+    if (!testResults) {
+      toast({
+        title: "No Results Available",
+        description: "Please run a test first to generate a report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reportData: HtmlReportData = {
+      type: "automation", // Performance testing maps to automation type for report generation
+      title: "Performance Test Report",
+      summary: {
+        total: 1, // Single performance test
+        passed: testResults.summary.errorRate < 5 ? 1 : 0,
+        failed: testResults.summary.errorRate >= 5 ? 1 : 0,
+        skipped: 0,
+        duration: duration,
+      },
+      results: [
+        {
+          name: `Performance Test - ${targetUrl || activeJmxFile || 'Manual Configuration'}`,
+          status: testResults.summary.errorRate < 5 ? "passed" : "failed",
+          time: duration * 1000, // Convert to milliseconds
+          error: testResults.summary.errorRate >= 5 ? `High error rate: ${testResults.summary.errorRate}%` : undefined,
+          assertions: [
+            {
+              name: `Total Requests: ${testResults.summary.totalRequests}`,
+              status: "passed",
+            },
+            {
+              name: `Successful Requests: ${testResults.summary.successfulRequests}`,
+              status: "passed",
+            },
+            {
+              name: `Failed Requests: ${testResults.summary.failedRequests}`,
+              status: testResults.summary.failedRequests > 0 ? "failed" : "passed",
+              error: testResults.summary.failedRequests > 0 ? `${testResults.summary.failedRequests} requests failed` : undefined,
+            },
+            {
+              name: `Average Response Time: ${testResults.summary.averageResponseTime}ms`,
+              status: testResults.summary.averageResponseTime < 1000 ? "passed" : "failed",
+              error: testResults.summary.averageResponseTime >= 1000 ? "Response time exceeds 1000ms threshold" : undefined,
+            },
+            {
+              name: `Throughput: ${testResults.summary.throughput}/s`,
+              status: "passed",
+            },
+            {
+              name: `Error Rate: ${testResults.summary.errorRate}%`,
+              status: testResults.summary.errorRate < 5 ? "passed" : "failed",
+              error: testResults.summary.errorRate >= 5 ? "Error rate exceeds 5% threshold" : undefined,
+            },
+          ],
+        },
+      ],
+      configuration: {
+        url: targetUrl,
+        method: "GET",
+        browser: "JMeter Performance Test",
+        headless: true,
+        screenshots: false,
+        video: false,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    downloadHtmlReport(reportData, `performance-test-report-${new Date().toISOString().slice(0, 10)}.html`);
+
+    toast({
+      title: "HTML Report Downloaded",
+      description: "Detailed performance test report has been downloaded successfully.",
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -276,16 +353,28 @@ const PerformanceTesting = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Test Configuration</CardTitle>
-              {jmxContent && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={exportJmxFile}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export JMX
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {jmxContent && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={exportJmxFile}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export JMX
+                  </Button>
+                )}
+                {testResults && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDownloadHtmlReport}
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    HTML Report
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="border border-dashed rounded-md p-4">
@@ -438,7 +527,19 @@ const PerformanceTesting = () => {
         <div className="lg:col-span-2">
           <Card className="h-full">
             <CardHeader>
-              <CardTitle>Test Results</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Test Results</CardTitle>
+                {testResults && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadHtmlReport}
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    Download HTML Report
+                  </Button>
+                )}
+              </div>
               {activeJmxFile && jmxLoaded && (
                 <p className="text-sm text-muted-foreground">
                   Active scenario: {activeJmxFile}
