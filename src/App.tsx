@@ -15,6 +15,7 @@ import Conversion from "./pages/Conversion";
 import FunctionalTesting from "./pages/FunctionalTesting";
 import AutomationTesting from "./pages/AutomationTesting";
 import PerformanceTesting from "./pages/PerformanceTesting";
+import CiCdIntegration from "./pages/CiCdIntegration";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/functional" element={<FunctionalTesting />} />
                 <Route path="/automation" element={<AutomationTesting />} />
                 <Route path="/performance" element={<PerformanceTesting />} />
+                <Route path="/cicd" element={<CiCdIntegration />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
