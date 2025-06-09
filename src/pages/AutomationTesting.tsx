@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Code, Play, FileCode, Download } from "lucide-react";
 import { FileInput } from "@/components/FileInput";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TestReport, TestResult } from "@/components/testing/TestReport";
 
 const AutomationTesting = () => {
   const [testFile, setTestFile] = useState<File | null>(null);
@@ -252,6 +252,53 @@ Running 3 tests using 1 worker
     }, 2000);
   };
 
+  const generateTestResults = () => {
+    // Mock test results for demonstration
+    const mockResults: TestResult[] = [
+      {
+        name: "Navigation Test",
+        status: Math.random() > 0.3 ? "passed" : "failed",
+        time: Math.random() * 1000 + 500,
+        assertions: [
+          {
+            name: "Page loaded successfully",
+            status: "passed" as const
+          },
+          {
+            name: "Navigation elements visible",
+            status: "passed" as const
+          }
+        ]
+      },
+      {
+        name: "Authentication Test",
+        status: Math.random() > 0.3 ? "passed" : "failed",
+        time: Math.random() * 1500 + 800,
+        error: Math.random() > 0.7 ? "Login form not found" : undefined,
+        assertions: [
+          {
+            name: "Login form exists",
+            status: Math.random() > 0.3 ? "passed" : "failed" as const,
+            error: Math.random() > 0.7 ? "Element not found" : undefined
+          }
+        ]
+      },
+      {
+        name: "Form Submission Test",
+        status: Math.random() > 0.3 ? "passed" : "failed",
+        time: Math.random() * 2000 + 1000,
+        assertions: [
+          {
+            name: "Form submits successfully",
+            status: "passed" as const
+          }
+        ]
+      }
+    ];
+
+    return mockResults;
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -404,9 +451,10 @@ Running 3 tests using 1 worker
 
         <div className="lg:col-span-2">
           <Tabs defaultValue="editor">
-            <TabsList className="grid grid-cols-2">
+            <TabsList className="grid grid-cols-3">
               <TabsTrigger value="editor">Test Script</TabsTrigger>
               <TabsTrigger value="results">Test Results</TabsTrigger>
+              <TabsTrigger value="report">Test Report</TabsTrigger>
             </TabsList>
             <TabsContent value="editor">
               <Card>
@@ -438,6 +486,37 @@ Running 3 tests using 1 worker
                     <div className="flex flex-col items-center justify-center h-[500px]">
                       <p className="text-muted-foreground">
                         {isRunning ? "Running tests..." : "No test results yet. Run tests to see results here."}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="report">
+              <Card>
+                <CardContent className="pt-4">
+                  {testStatus === 'success' || testStatus === 'failure' ? (
+                    <TestReport 
+                      results={generateTestResults()}
+                      summary={{
+                        total: 3,
+                        passed: testStatus === 'success' ? 3 : 2,
+                        failed: testStatus === 'success' ? 0 : 1,
+                        skipped: 0,
+                        duration: 7.2
+                      }}
+                      type="automation"
+                      configuration={{
+                        browser: browser,
+                        headless: headless,
+                        screenshots: captureScreenshots,
+                        video: captureVideo
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-[500px]">
+                      <p className="text-muted-foreground">
+                        Run tests to generate a detailed report
                       </p>
                     </div>
                   )}

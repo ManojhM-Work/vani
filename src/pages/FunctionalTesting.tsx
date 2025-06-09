@@ -759,6 +759,10 @@ const FunctionalTesting = () => {
                 duration: testResults.reduce((acc, curr) => acc + (curr.time || 0), 0) / 1000
               }}
               type="functional"
+              configuration={{
+                url: url,
+                method: method
+              }}
             />
           ) : (
             <Card className="h-full">

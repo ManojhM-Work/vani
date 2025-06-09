@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { downloadHtmlReport, HtmlReportData } from "@/utils/htmlReportGenerator";
 
 export interface TestResult {
   name: string;
@@ -27,10 +27,18 @@ interface TestReportProps {
     skipped: number;
     duration: number;
   };
-  type: "functional" | "automation" | "performance";
+  type: "functional" | "automation";
+  configuration?: {
+    url?: string;
+    method?: string;
+    browser?: string;
+    headless?: boolean;
+    screenshots?: boolean;
+    video?: boolean;
+  };
 }
 
-export const TestReport = ({ results, summary, type }: TestReportProps) => {
+export const TestReport = ({ results, summary, type, configuration }: TestReportProps) => {
   const [activeTab, setActiveTab] = useState<string>("summary");
   const { toast } = useToast();
 
@@ -59,14 +67,44 @@ export const TestReport = ({ results, summary, type }: TestReportProps) => {
     });
   };
 
+  const handleDownloadHtmlReport = () => {
+    const reportData: HtmlReportData = {
+      type,
+      title: `${type.charAt(0).toUpperCase() + type.slice(1)} Test Report`,
+      summary,
+      results: results.map(result => ({
+        name: result.name,
+        status: result.status,
+        time: result.time,
+        error: result.error,
+        assertions: result.assertions
+      })),
+      configuration,
+      timestamp: new Date().toISOString()
+    };
+
+    downloadHtmlReport(reportData);
+
+    toast({
+      title: "HTML Report Downloaded",
+      description: `Detailed HTML report has been downloaded successfully.`,
+    });
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Test Report</CardTitle>
-        <Button variant="outline" onClick={handleDownloadReport}>
-          <Download className="mr-2 h-4 w-4" />
-          Download Report
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleDownloadReport}>
+            <Download className="mr-2 h-4 w-4" />
+            JSON Report
+          </Button>
+          <Button variant="outline" onClick={handleDownloadHtmlReport}>
+            <Globe className="mr-2 h-4 w-4" />
+            HTML Report
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
