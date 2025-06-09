@@ -8,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileInput } from "@/components/FileInput";
-import { FileJson, Play, Download, Globe } from "lucide-react";
+import { FileJson, Play, Download, Globe, FileSpreadsheet } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { downloadHtmlReport, HtmlReportData } from "@/utils/htmlReportGenerator";
 
@@ -46,10 +47,12 @@ const PerformanceTesting = () => {
   const [jmxContent, setJmxContent] = useState<string | null>(null);
   const [multipleJmxFiles, setMultipleJmxFiles] = useState<{name: string, content: string}[]>([]);
   const [activeJmxFile, setActiveJmxFile] = useState<string | null>(null);
+  const [csvRequired, setCsvRequired] = useState<boolean>(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   
   const { toast } = useToast();
 
-  const handleFileChange = (file: File | null) => {
+  const handleJmxFileChange = (file: File | null) => {
     if (!file) {
       setJmxFile(null);
       setJmxLoaded(false);
@@ -81,7 +84,6 @@ const PerformanceTesting = () => {
         // For JMX files, we would typically parse them, but for this demo we'll just simulate success
         setTimeout(() => {
           // Mock JMX import success - set values based on "loaded" JMX file
-          setTargetUrl("https://api.example.com/test");
           setThreadCount(25);
           setRampUp(10);
           setDuration(120);
@@ -101,6 +103,16 @@ const PerformanceTesting = () => {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleCsvFileChange = (file: File | null) => {
+    setCsvFile(file);
+    if (file) {
+      toast({
+        title: "CSV File Loaded",
+        description: `Successfully loaded ${file.name}`,
+      });
+    }
   };
 
   const selectJmxFile = (fileName: string) => {
@@ -158,10 +170,19 @@ const PerformanceTesting = () => {
   };
 
   const handleRunTest = () => {
-    if (!targetUrl && !jmxLoaded) {
+    if (!jmxLoaded) {
       toast({
-        title: "URL Required",
-        description: "Please enter a target URL or import a JMX file for testing",
+        title: "JMX File Required",
+        description: "Please import a JMX file for testing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (csvRequired && !csvFile) {
+      toast({
+        title: "CSV File Required",
+        description: "Please upload a CSV data file as it's marked as required",
         variant: "destructive",
       });
       return;
@@ -173,7 +194,7 @@ const PerformanceTesting = () => {
 
     toast({
       title: "Starting Performance Test",
-      description: `Threads: ${threadCount} | Duration: ${duration}s | URL: ${targetUrl}`,
+      description: `Threads: ${threadCount} | Duration: ${duration}s | JMX: ${activeJmxFile}${csvFile ? ` | CSV: ${csvFile.name}` : ''}`,
     });
 
     // Mock test execution with progress updates
@@ -394,7 +415,7 @@ const PerformanceTesting = () => {
                 </div>
                 <FileInput
                   accept=".jmx"
-                  onChange={handleFileChange}
+                  onChange={handleJmxFileChange}
                   label="Select JMX File"
                   icon={<FileJson className="h-4 w-4 mr-2" />}
                 />
@@ -434,14 +455,34 @@ const PerformanceTesting = () => {
                 )}
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="target-url">Target URL</Label>
-                <Input
-                  id="target-url"
-                  placeholder="https://api.example.com/endpoint"
-                  value={targetUrl}
-                  onChange={(e) => setTargetUrl(e.target.value)}
-                />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="csv-required" className="text-sm font-medium">CSV Required</Label>
+                  <Switch
+                    id="csv-required"
+                    checked={csvRequired}
+                    onCheckedChange={setCsvRequired}
+                  />
+                </div>
+                
+                {csvRequired && (
+                  <div className="border border-dashed rounded-md p-4">
+                    <Label className="text-sm font-medium mb-2 block">Import CSV Data File</Label>
+                    <FileInput
+                      accept=".csv"
+                      onChange={handleCsvFileChange}
+                      label="Select CSV File"
+                      icon={<FileSpreadsheet className="h-4 w-4 mr-2" />}
+                    />
+                    {csvFile && (
+                      <div className="mt-2">
+                        <p className="text-sm">
+                          Imported: <span className="font-medium">{csvFile.name}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -543,6 +584,9 @@ const PerformanceTesting = () => {
               {activeJmxFile && jmxLoaded && (
                 <p className="text-sm text-muted-foreground">
                   Active scenario: {activeJmxFile}
+                  {csvFile && csvRequired && (
+                    <span> | Data: {csvFile.name}</span>
+                  )}
                 </p>
               )}
             </CardHeader>
@@ -724,7 +768,7 @@ const PerformanceTesting = () => {
                   {!isRunning && !jmxLoaded && (
                     <Alert>
                       <AlertDescription>
-                        Import a JMX file to load test configurations or configure test parameters manually.
+                        Import a JMX file to load test configurations and start testing.
                       </AlertDescription>
                     </Alert>
                   )}
