@@ -25,7 +25,8 @@ import {
   Check, 
   XCircle, 
   AlertTriangle,
-  FileOutput
+  FileOutput,
+  Brain
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -37,6 +38,7 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
+import { TTRDialog } from "@/components/testing/TTRDialog";
 
 const apiFormats = [
   { id: "postman", name: "Postman Collection" },
@@ -745,11 +747,19 @@ const Conversion = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold">API Conversion</h2>
-        <p className="text-muted-foreground mt-2">
-          Convert between different API specification formats
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold">API Conversion</h2>
+          <p className="text-muted-foreground mt-2">
+            Convert between different API specification formats
+          </p>
+        </div>
+        <TTRDialog>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            TTR
+          </Button>
+        </TTRDialog>
       </div>
 
       <Card>
