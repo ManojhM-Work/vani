@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
+import AIChatbot from "../chatbot/AIChatbot";
 
 const AppLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -21,6 +22,7 @@ const AppLayout = () => {
             <Outlet />
           </main>
         </div>
+        <AIChatbot />
       </div>
     </SidebarProvider>
   );
