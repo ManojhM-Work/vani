@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Code, Play, FileCode, Download } from "lucide-react";
+import { Code, Play, FileCode, Download, FileSpreadsheet } from "lucide-react";
 import { FileInput } from "@/components/FileInput";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TestReport, TestResult } from "@/components/testing/TestReport";
@@ -19,6 +20,8 @@ const AutomationTesting = () => {
   const [headless, setHeadless] = useState<boolean>(true);
   const [captureScreenshots, setCaptureScreenshots] = useState<boolean>(true);
   const [captureVideo, setCaptureVideo] = useState<boolean>(false);
+  const [testDataRequired, setTestDataRequired] = useState<boolean>(false);
+  const [testDataFile, setTestDataFile] = useState<File | null>(null);
   const [testScript, setTestScript] = useState<string>(`import { test, expect } from '@playwright/test';
 
 test('basic test', async ({ page }) => {
@@ -77,6 +80,16 @@ test('basic test', async ({ page }) => {
     reader.readAsText(file);
   };
 
+  const handleTestDataFileChange = (file: File | null) => {
+    setTestDataFile(file);
+    if (file) {
+      toast({
+        title: "Test Data File Loaded",
+        description: `Successfully loaded ${file.name}`,
+      });
+    }
+  };
+
   const switchTestFile = (fileName: string) => {
     const file = testFiles.find(tf => tf.name === fileName);
     if (file) {
@@ -106,6 +119,15 @@ test('basic test', async ({ page }) => {
       return;
     }
 
+    if (testDataRequired && !testDataFile) {
+      toast({
+        title: "Test Data File Required",
+        description: "Please upload a test data file as it's marked as required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsRunning(true);
     setTestResults(null);
     setTestStatus('running');
@@ -116,7 +138,8 @@ test('basic test', async ({ page }) => {
       `Headless: ${headless ? 'Yes' : 'No'}`,
       `Screenshots: ${captureScreenshots ? 'Enabled' : 'Disabled'}`,
       `Video: ${captureVideo ? 'Enabled' : 'Disabled'}`,
-    ].join(' | ');
+      testDataFile ? `Data: ${testDataFile.name}` : '',
+    ].filter(Boolean).join(' | ');
 
     toast({
       title: "Starting Tests",
@@ -357,6 +380,36 @@ Running 3 tests using 1 worker
                   />
                   <Label htmlFor="video">Record Video</Label>
                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="test-data-required" className="text-sm font-medium">Test Data Required</Label>
+                  <Switch
+                    id="test-data-required"
+                    checked={testDataRequired}
+                    onCheckedChange={setTestDataRequired}
+                  />
+                </div>
+                
+                {testDataRequired && (
+                  <div className="border border-dashed rounded-md p-4">
+                    <Label className="text-sm font-medium mb-2 block">Import Test Data File</Label>
+                    <FileInput
+                      accept=".csv,.json,.xlsx"
+                      onChange={handleTestDataFileChange}
+                      label="Select Test Data File"
+                      icon={<FileSpreadsheet className="h-4 w-4 mr-2" />}
+                    />
+                    {testDataFile && (
+                      <div className="mt-2">
+                        <p className="text-sm">
+                          Imported: <span className="font-medium">{testDataFile.name}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="border border-dashed rounded-md p-4">

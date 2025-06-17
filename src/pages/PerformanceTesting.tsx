@@ -49,6 +49,8 @@ const PerformanceTesting = () => {
   const [activeJmxFile, setActiveJmxFile] = useState<string | null>(null);
   const [csvRequired, setCsvRequired] = useState<boolean>(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [testDataRequired, setTestDataRequired] = useState<boolean>(false);
+  const [testDataFile, setTestDataFile] = useState<File | null>(null);
   
   const { toast } = useToast();
 
@@ -110,6 +112,16 @@ const PerformanceTesting = () => {
     if (file) {
       toast({
         title: "CSV File Loaded",
+        description: `Successfully loaded ${file.name}`,
+      });
+    }
+  };
+
+  const handleTestDataFileChange = (file: File | null) => {
+    setTestDataFile(file);
+    if (file) {
+      toast({
+        title: "Test Data File Loaded",
         description: `Successfully loaded ${file.name}`,
       });
     }
@@ -188,13 +200,26 @@ const PerformanceTesting = () => {
       return;
     }
 
+    if (testDataRequired && !testDataFile) {
+      toast({
+        title: "Test Data File Required",
+        description: "Please upload a test data file as it's marked as required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsRunning(true);
     setProgress(0);
     setTestResults(null);
 
+    const dataFileInfo = [];
+    if (csvFile) dataFileInfo.push(`CSV: ${csvFile.name}`);
+    if (testDataFile) dataFileInfo.push(`Test Data: ${testDataFile.name}`);
+
     toast({
       title: "Starting Performance Test",
-      description: `Threads: ${threadCount} | Duration: ${duration}s | JMX: ${activeJmxFile}${csvFile ? ` | CSV: ${csvFile.name}` : ''}`,
+      description: `Threads: ${threadCount} | Duration: ${duration}s | JMX: ${activeJmxFile}${dataFileInfo.length > 0 ? ` | ${dataFileInfo.join(' | ')}` : ''}`,
     });
 
     // Mock test execution with progress updates
@@ -457,7 +482,7 @@ const PerformanceTesting = () => {
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="csv-required" className="text-sm font-medium">CSV Required</Label>
+                  <Label htmlFor="csv-required" className="text-sm font-medium">CSV Data Required</Label>
                   <Switch
                     id="csv-required"
                     checked={csvRequired}
@@ -478,6 +503,34 @@ const PerformanceTesting = () => {
                       <div className="mt-2">
                         <p className="text-sm">
                           Imported: <span className="font-medium">{csvFile.name}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="test-data-required" className="text-sm font-medium">Test Data Required</Label>
+                  <Switch
+                    id="test-data-required"
+                    checked={testDataRequired}
+                    onCheckedChange={setTestDataRequired}
+                  />
+                </div>
+                
+                {testDataRequired && (
+                  <div className="border border-dashed rounded-md p-4">
+                    <Label className="text-sm font-medium mb-2 block">Import Test Data File</Label>
+                    <FileInput
+                      accept=".csv,.json,.xlsx"
+                      onChange={handleTestDataFileChange}
+                      label="Select Test Data File"
+                      icon={<FileSpreadsheet className="h-4 w-4 mr-2" />}
+                    />
+                    {testDataFile && (
+                      <div className="mt-2">
+                        <p className="text-sm">
+                          Imported: <span className="font-medium">{testDataFile.name}</span>
                         </p>
                       </div>
                     )}
