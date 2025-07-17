@@ -19,7 +19,8 @@ import {
   Code, 
   Gauge,
   GitBranch,
-  ChevronDown 
+  ChevronDown,
+  KanbanSquare
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -35,6 +36,11 @@ const AppSidebar = ({ isOpen }: AppSidebarProps) => {
       title: "Dashboard",
       icon: LayoutDashboard,
       href: "/",
+    },
+    {
+      title: "Jira Projects",
+      icon: KanbanSquare,
+      href: "/jira/projects",
     },
     {
       title: "API Conversion",

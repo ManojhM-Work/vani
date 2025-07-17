@@ -16,6 +16,9 @@ import FunctionalTesting from "./pages/FunctionalTesting";
 import AutomationTesting from "./pages/AutomationTesting";
 import PerformanceTesting from "./pages/PerformanceTesting";
 import CiCdIntegration from "./pages/CiCdIntegration";
+import JiraProjects from "./pages/JiraProjects";
+import JiraBoard from "./pages/JiraBoard";
+import JiraIssues from "./pages/JiraIssues";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +40,9 @@ const App = () => (
                 </ProtectedRoute>
               }>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/jira/projects" element={<JiraProjects />} />
+                <Route path="/jira/projects/:projectKey/board" element={<JiraBoard />} />
+                <Route path="/jira/projects/:projectKey/issues" element={<JiraIssues />} />
                 <Route path="/conversion" element={<Conversion />} />
                 <Route path="/functional" element={<FunctionalTesting />} />
                 <Route path="/automation" element={<AutomationTesting />} />
